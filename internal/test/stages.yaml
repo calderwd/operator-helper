@@ -1,0 +1,14 @@
+title: stages-test
+version: 1.0
+stage:
+  - name: middleware-install
+    resources:
+    - resources/mydeployment-1.yaml
+    - resources/myconfigmap-1.yaml
+    - resources/mysecret-1.yaml
+
+  - name: app-install
+    resources:
+    - resources/mydeployment-2.yaml
+    - resources/myconfigmap-2.yaml
+    - resources/mysecret-2.yaml   

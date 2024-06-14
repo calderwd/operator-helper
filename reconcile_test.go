@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/calderwd/operator-helper/internal/config"
 	"github.com/calderwd/operator-helper/internal/test"
 	"github.com/go-logr/zapr"
 	"github.com/golang/mock/gomock"
@@ -43,7 +44,7 @@ func (in *Dummy) DeepCopyObject() runtime.Object {
 	return nil
 }
 
-func TestIsSaasTrue(t *testing.T) {
+func TestReconcileOnEmptyConfig(t *testing.T) {
 
 	nn := types.NamespacedName{
 		Namespace: "test",
@@ -79,6 +80,50 @@ func TestIsSaasTrue(t *testing.T) {
 
 	r, err := Reconcile(ReconcileConfig{}, c, nn, &dummy, ll)
 
-	assert.NoError(t, err)
+	assert.NotNil(t, err)
+	assert.Equal(t, err.Error(), config.ERROR_STAGES_PATH_EMPTY)
+	assert.Equal(t, r, RequeueAfterError)
+}
+
+func TestReconcile(t *testing.T) {
+
+	nn := types.NamespacedName{
+		Namespace: "test",
+		Name:      "test",
+	}
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	c := test.NewMockClient(mockCtrl)
+
+	l, _ := zap.NewDevelopment()
+	ll := zapr.NewLogger(l)
+
+	c.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
+
+		func(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+			switch c := obj.(type) {
+			case *Dummy:
+				c.SetName("test")
+				c.SetNamespace("test")
+			}
+			return nil
+		},
+	).MaxTimes(1)
+
+	dummy := Dummy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+		},
+	}
+
+	rc := ReconcileConfig{
+		StagesPath: "internal/test/stages.yaml",
+	}
+	r, err := Reconcile(rc, c, nn, &dummy, ll)
+
+	assert.Nil(t, err)
 	assert.Equal(t, r, ctrl.Result{})
 }

@@ -29,12 +29,12 @@ const (
 	ERROR_FAILED_TO_VALIDATE_STAGE string = "failed to validate stage"
 )
 
-type ReconcileConfig struct {
-}
+type ReconcileConfig rconfig.ReconcileConfig
 
 func (rc ReconcileConfig) toInternalConfig() (rconfig.ReconcileConfig, error) {
-
-	m := rconfig.ReconcileConfig{}
+	m := rconfig.ReconcileConfig{
+		StagesPath: rc.StagesPath,
+	}
 	return m.Validate(m)
 }
 
@@ -74,7 +74,7 @@ func Reconcile(config ReconcileConfig, c client.Client, nn types.NamespacedName,
 	// For each stage
 	//   Process stage
 	//   if validation present then wait until pass
-	for _, stage := range stages {
+	for _, stage := range stages.Stages {
 		if err := stage.Process(ic, values, nn); err != nil {
 			log.Error(err, ERROR_FAILED_TO_PROCESS_STAGE)
 			return RequeueAfterError, err
