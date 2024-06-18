@@ -1,0 +1,42 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:  
+  name: {{ $.app.name }}-2
+  namespace: test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: my-app-2
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: my-app-2
+    spec:
+      containers:
+        - resources:
+          limits:
+            cpu: 100m
+            memory: 250Mi
+          requests:
+            cpu: 100m
+            memory: 250Mi
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+            scheme: HTTP
+          initialDelaySeconds: 5
+          timeoutSeconds: 1
+          periodSeconds: 10
+          successThreshold: 1
+          failureThreshold: 3
+        name: my-app-1
+        command:
+        - /app
+        env:
+        - name: MY_ENV
+          value: "1"
+        - name: MY_ENV_2
+          value: "2"
+        image: {{ $.app.deployment.image }}

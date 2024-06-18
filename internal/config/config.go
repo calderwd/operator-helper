@@ -10,6 +10,7 @@ const (
 
 type ReconcileConfig struct {
 	StagesPath string
+	ValuesPath string
 }
 
 func (r ReconcileConfig) Validate(config ReconcileConfig) (ReconcileConfig, error) {
@@ -17,5 +18,8 @@ func (r ReconcileConfig) Validate(config ReconcileConfig) (ReconcileConfig, erro
 	if r.StagesPath == "" {
 		return r, fmt.Errorf(ERROR_STAGES_PATH_EMPTY)
 	}
+
+	// ValuesPath is optional
+
 	return r, nil
 }

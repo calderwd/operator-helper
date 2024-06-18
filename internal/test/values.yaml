@@ -1,0 +1,17 @@
+title: "Test"
+
+middle:
+  name: "my-middle"
+  replicas: 2
+
+app:
+  name: "my-test"
+  replicas: 1
+  cpu:
+    request: "50m"
+    limit: "50m"
+  ram:
+    request: "10Mi"
+    limit: "10Mi"
+  deployment:
+    image: myimage:123  

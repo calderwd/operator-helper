@@ -121,6 +121,7 @@ func TestReconcile(t *testing.T) {
 
 	rc := ReconcileConfig{
 		StagesPath: "internal/test/stages.yaml",
+		ValuesPath: "internal/test/values.yaml",
 	}
 	r, err := Reconcile(rc, c, nn, &dummy, ll)
 

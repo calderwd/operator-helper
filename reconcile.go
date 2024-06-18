@@ -34,6 +34,7 @@ type ReconcileConfig rconfig.ReconcileConfig
 func (rc ReconcileConfig) toInternalConfig() (rconfig.ReconcileConfig, error) {
 	m := rconfig.ReconcileConfig{
 		StagesPath: rc.StagesPath,
+		ValuesPath: rc.ValuesPath,
 	}
 	return m.Validate(m)
 }
