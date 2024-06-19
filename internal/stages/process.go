@@ -7,6 +7,7 @@ import (
 	"text/template"
 
 	"github.com/calderwd/operator-helper/internal/config"
+	"github.com/calderwd/operator-helper/internal/rc"
 	"github.com/calderwd/operator-helper/internal/stagevalues"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -35,7 +36,14 @@ func (s Stage) Process(config config.ReconcileConfig, values stagevalues.Values,
 			return err
 		}
 
-		fmt.Println(buf.String())
+		rclient, err := rc.GetDynamicClient()
+		if err != nil {
+			return err
+		}
+
+		if err := rclient.CreateResourceFromYaml(buf.String()); err != nil {
+			return err
+		}
 	}
 
 	return nil

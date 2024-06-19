@@ -14,13 +14,23 @@ spec:
         app.kubernetes.io/name: my-app-1
     spec:
       containers:
-        - resources:
+      - resources:
           limits:
             cpu: 100m
             memory: 250Mi
           requests:
             cpu: 100m
             memory: 250Mi
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 8081
+            scheme: HTTP
+          initialDelaySeconds: 15
+          periodSeconds: 20
+          successThreshold: 1
+          timeoutSeconds: 1            
         readinessProbe:
           httpGet:
             path: /readyz

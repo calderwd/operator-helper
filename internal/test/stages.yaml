@@ -3,12 +3,12 @@ version: 1.0
 stage:
   - name: middleware-install
     resources:
-    - internal/test/resources/mydeployment-1.yaml
     - internal/test/resources/myconfigmap-1.yaml
-    - internal/test/resources/mysecret-1.yaml
+    - internal/test/resources/mysecret-1.yaml    
+    - internal/test/resources/mydeployment-1.yaml
 
   - name: app-install
     resources:
-    - internal/test/resources/mydeployment-2.yaml1
     - internal/test/resources/myconfigmap-2.yaml
-    - internal/test/resources/mysecret-2.yaml   
+    - internal/test/resources/mysecret-2.yaml       
+    - internal/test/resources/mydeployment-2.yaml    

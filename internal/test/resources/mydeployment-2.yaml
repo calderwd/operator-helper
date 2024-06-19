@@ -14,7 +14,7 @@ spec:
         app.kubernetes.io/name: my-app-2
     spec:
       containers:
-        - resources:
+      - resources:
           limits:
             cpu: 100m
             memory: 250Mi
@@ -31,7 +31,7 @@ spec:
           periodSeconds: 10
           successThreshold: 1
           failureThreshold: 3
-        name: my-app-1
+        name: my-app-2
         command:
         - /app
         env:

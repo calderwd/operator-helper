@@ -1,0 +1,8 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: dummy
+  namespace: test
+data: 
+  myconfigdata1: test1
+  myconfigdata2: test2

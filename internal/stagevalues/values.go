@@ -21,11 +21,12 @@ func (v *Values) Load(config config.ReconcileConfig, nn types.NamespacedName, cr
 		return nil
 	}
 
-	if b, err := os.ReadFile(config.ValuesPath); err != nil {
+	b, err := os.ReadFile(config.ValuesPath)
+	if err != nil {
 		return err
-	} else {
-		return yaml.Unmarshal(b, v)
 	}
+
+	return yaml.Unmarshal(b, v)
 }
 
 func (v Values) GetString(path string) string {

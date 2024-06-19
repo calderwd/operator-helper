@@ -17,9 +17,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+type DummySpec struct {
+	Dummy1 string `json:"dummy1,omitempty"`
+	Dummy2 string `json:"dummy2,omitempty"`
+}
+
 type Dummy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec DummySpec `json:"spec,omitempty"`
 }
 
 func (in *Dummy) DeepCopyInto(out *Dummy) {
@@ -107,6 +114,8 @@ func TestReconcile(t *testing.T) {
 			case *Dummy:
 				c.SetName("test")
 				c.SetNamespace("test")
+				c.Spec.Dummy1 = "value1"
+				c.Spec.Dummy2 = "value2"
 			}
 			return nil
 		},
