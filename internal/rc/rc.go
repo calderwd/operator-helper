@@ -2,19 +2,21 @@ package rc
 
 import (
 	"context"
-	"strings"
 
 	"gopkg.in/yaml.v2"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/restmapper"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 type DClient struct {
 	Client *dynamic.DynamicClient
+	Mapper meta.RESTMapper
 }
 
 func GetDynamicClient() (*DClient, error) {
@@ -26,7 +28,19 @@ func GetDynamicClient() (*DClient, error) {
 		return nil, err
 	}
 
-	return &DClient{Client: dynamicClient}, nil
+	discoveryClient := discovery.NewDiscoveryClientForConfigOrDie(cfg)
+
+	apis, err := restmapper.GetAPIGroupResources(discoveryClient)
+	if err != nil {
+		return nil, err
+	}
+
+	mapper := restmapper.NewDiscoveryRESTMapper(apis)
+
+	return &DClient{
+		Client: dynamicClient,
+		Mapper: mapper,
+	}, nil
 }
 
 func (c DClient) CreateResourceFromYaml(rs string) error {
@@ -42,13 +56,19 @@ func (c DClient) CreateResourceFromYaml(rs string) error {
 	resource.SetUnstructuredContent(em)
 
 	gvk := resource.GroupVersionKind()
-	gvr := schema.GroupVersionResource{
-		Group:    gvk.Group,
-		Version:  gvk.Version,
-		Resource: strings.ToLower(gvk.Kind) + "s", // TODO - need proper fix using mapper
+	mapping, err := c.Mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+	if err != nil {
+		return err
 	}
 
-	_, err := c.Client.Resource(gvr).Namespace("test").Create(context.TODO(), &resource, v1.CreateOptions{})
+	var res dynamic.ResourceInterface
+	if mapping.Scope.Name() == meta.RESTScopeNameNamespace {
+		res = c.Client.Resource(mapping.Resource).Namespace("test")
+	} else {
+		res = c.Client.Resource(mapping.Resource)
+	}
+
+	_, err = res.Create(context.TODO(), &resource, v1.CreateOptions{})
 
 	if k8serrors.IsAlreadyExists(err) {
 		return nil
