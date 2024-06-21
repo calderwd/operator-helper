@@ -2,7 +2,7 @@ kind: Deployment
 apiVersion: apps/v1
 metadata:  
   name: {{ $.app.name }}-2
-  namespace: test
+  namespace: {{ $.cr.namespace }}
 spec:
   replicas: 1
   selector:

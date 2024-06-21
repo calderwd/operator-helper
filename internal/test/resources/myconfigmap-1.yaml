@@ -2,7 +2,7 @@ kind: ConfigMap
 apiVersion: v1
 metadata:
   name: {{ $.app.name }}-config-1
-  namespace: test
+  namespace: {{ $.cr.namespace }}
 data: 
   myconfigdata: test1
   myconfigdata: test2

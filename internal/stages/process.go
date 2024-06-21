@@ -18,6 +18,11 @@ func (s Stage) Process(config config.ReconcileConfig, values stagevalues.Values,
 		return nil
 	}
 
+	rclient, err := rc.GetDynamicClient()
+	if err != nil {
+		return err
+	}
+
 	for _, resource := range s.Resources {
 
 		var fileName string = string(resource)
@@ -33,11 +38,6 @@ func (s Stage) Process(config config.ReconcileConfig, values stagevalues.Values,
 
 		var buf bytes.Buffer
 		if err := tmplate.Execute(&buf, values); err != nil {
-			return err
-		}
-
-		rclient, err := rc.GetDynamicClient()
-		if err != nil {
 			return err
 		}
 

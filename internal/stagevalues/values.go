@@ -26,23 +26,74 @@ func (v *Values) Load(config config.ReconcileConfig, nn types.NamespacedName, cr
 		return err
 	}
 
-	return yaml.Unmarshal(b, v)
+	err = yaml.Unmarshal(b, v)
+	if err != nil {
+		return err
+	}
+
+	return v.extractValuesFromCR(cr)
+}
+
+func (v Values) extractValuesFromCR(cr client.Object) error {
+
+	values := map[string]interface{}{}
+	values["name"] = cr.GetName()
+	values["namespace"] = cr.GetNamespace()
+
+	v["cr"] = values
+	return nil
+}
+
+func (vm Values) AsMapOfString() map[string]interface{} {
+
+	result := make(map[string]interface{})
+
+	var n func(m interface{}) interface{}
+	n = func(m interface{}) interface{} {
+		result := m
+
+		if em, ok := m.(Values); ok {
+			res := make(map[string]interface{})
+
+			for k := range em {
+				v := em[k]
+				res[k.(string)] = n(v)
+			}
+			result = res
+		}
+		return result
+	}
+
+	for k := range vm {
+		vv := vm[k]
+		v := n(vv)
+		result[k.(string)] = v
+	}
+
+	return result
 }
 
 func (v Values) GetString(path string) string {
 
+	vw := v.AsMapOfString()
+
 	spl := strings.Split(path, ".")
 
-	var ptr map[interface{}]interface{}
+	var ptr = vw
 
-	if vv, ok := v[spl[0]]; ok {
-		if ptr, ok = vv.(map[interface{}]interface{}); !ok {
-			if vvv, ok := vv.(string); ok {
-				return vvv
-			}
-			if vvv, ok := vv.(int); ok {
-				return strconv.Itoa(vvv)
-			}
+	if vv, ok := ptr[spl[0]]; ok {
+
+		rv := reflect.Indirect(reflect.ValueOf(vv))
+
+		switch rv.Kind() {
+		case reflect.Map:
+			ptr = vv.(map[string]interface{})
+		case reflect.String:
+			x := vv.(string)
+			return x
+		case reflect.Int:
+			x := strconv.Itoa(vv.(int))
+			return x
 		}
 	}
 
@@ -56,13 +107,13 @@ func (v Values) GetString(path string) string {
 	return ""
 }
 
-func (v Values) walk(mv map[interface{}]interface{}, s string) (map[interface{}]interface{}, *string) {
+func (v Values) walk(mv map[string]interface{}, s string) (map[string]interface{}, *string) {
 	if vv, ok := mv[s]; ok {
 		rv := reflect.Indirect(reflect.ValueOf(vv))
 
 		switch rv.Kind() {
 		case reflect.Map:
-			return vv.(map[interface{}]interface{}), nil
+			return vv.(map[string]interface{}), nil
 		case reflect.String:
 			x := vv.(string)
 			return mv, &x

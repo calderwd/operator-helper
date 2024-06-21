@@ -48,7 +48,7 @@ func TestLoad(t *testing.T) {
 	dummy := Dummy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
-			Namespace: "test",
+			Namespace: "testnamespace",
 		},
 	}
 
@@ -59,4 +59,7 @@ func TestLoad(t *testing.T) {
 	assert.Equal(t, values.GetString("app.name"), "my-test")
 	assert.Equal(t, values.GetString("app.cpu.request"), "50m")
 	assert.Equal(t, values.GetString("middle.replicas"), "2")
+
+	assert.Equal(t, values.GetString("cr.name"), "test")
+	assert.Equal(t, values.GetString("cr.namespace"), "testnamespace")
 }
