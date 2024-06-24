@@ -1,6 +1,7 @@
 package stagevalues
 
 import (
+	"errors"
 	"os"
 	"reflect"
 	"strconv"
@@ -11,11 +12,21 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	config "github.com/calderwd/operator-helper/internal/config"
+	"github.com/go-logr/logr"
+)
+
+var (
+	ErrToMarshalCr   = errors.New("unable to unmarshal cr type")
+	ErrToUnmarshalCr = errors.New("unable to marshal type")
+)
+
+const (
+	CR string = "cr"
 )
 
 type Values map[interface{}]interface{}
 
-func (v *Values) Load(config config.ReconcileConfig, nn types.NamespacedName, cr client.Object) error {
+func (v *Values) Load(config config.ReconcileConfig, nn types.NamespacedName, cr client.Object, log logr.Logger) error {
 
 	if config.ValuesPath == "" {
 		return nil
@@ -31,17 +42,38 @@ func (v *Values) Load(config config.ReconcileConfig, nn types.NamespacedName, cr
 		return err
 	}
 
-	return v.extractValuesFromCR(cr)
+	return v.extractValuesFromCR(cr, log)
 }
 
-func (v Values) extractValuesFromCR(cr client.Object) error {
+func (v Values) extractValuesFromCR(cr interface{}, log logr.Logger) error {
 
-	values := map[string]interface{}{}
-	values["name"] = cr.GetName()
-	values["namespace"] = cr.GetNamespace()
+	if bb, err := yaml.Marshal(cr); err == nil {
 
-	v["cr"] = values
+		bstr := string(bb)
+		log.Info(bstr)
+
+		r := Values{}
+		if err = yaml.Unmarshal(bb, r); err != nil {
+			return err
+		}
+
+		v[CR] = v.sanitise(r)
+
+		// Add shortcuts
+		r["name"] = v.GetString("cr.objectmeta.name")
+		r["namespace"] = v.GetString("cr.objectmeta.namespace")
+
+	} else {
+		return ErrToMarshalCr
+	}
 	return nil
+}
+
+func (v Values) sanitise(values Values) Values {
+
+	values.deleteEntry("objectmeta.managedfields")
+	values.deleteEntry("status")
+	return values
 }
 
 func (vm Values) AsMapOfString() map[string]interface{} {
@@ -73,13 +105,32 @@ func (vm Values) AsMapOfString() map[string]interface{} {
 	return result
 }
 
-func (v Values) GetString(path string) string {
+func (v Values) deleteEntry(path string) Values {
+	spl := strings.Split(path, ".")
 
-	vw := v.AsMapOfString()
+	var ptr = v
+
+	if vv, ok := ptr[spl[0]]; ok {
+		rv := reflect.Indirect(reflect.ValueOf(vv))
+
+		switch rv.Kind() {
+		case reflect.Map:
+			ptr = vv.(Values)
+			for _, s := range spl[1:] {
+				ptr, vv = v.walk(ptr, s)
+			}
+			delete(ptr, spl[len(spl)-1])
+		}
+	}
+
+	return v
+}
+
+func (v Values) GetString(path string) string {
 
 	spl := strings.Split(path, ".")
 
-	var ptr = vw
+	var ptr = v
 
 	if vv, ok := ptr[spl[0]]; ok {
 
@@ -87,7 +138,7 @@ func (v Values) GetString(path string) string {
 
 		switch rv.Kind() {
 		case reflect.Map:
-			ptr = vv.(map[string]interface{})
+			ptr = vv.(Values)
 		case reflect.String:
 			x := vv.(string)
 			return x
@@ -107,13 +158,13 @@ func (v Values) GetString(path string) string {
 	return ""
 }
 
-func (v Values) walk(mv map[string]interface{}, s string) (map[string]interface{}, *string) {
+func (v Values) walk(mv map[interface{}]interface{}, s string) (map[interface{}]interface{}, *string) {
 	if vv, ok := mv[s]; ok {
 		rv := reflect.Indirect(reflect.ValueOf(vv))
 
 		switch rv.Kind() {
 		case reflect.Map:
-			return vv.(map[string]interface{}), nil
+			return vv.(Values), nil
 		case reflect.String:
 			x := vv.(string)
 			return mv, &x

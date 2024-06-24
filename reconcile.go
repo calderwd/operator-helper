@@ -58,7 +58,7 @@ func Reconcile(config ReconcileConfig, c client.Client, nn types.NamespacedName,
 	var values stagevalues.Values
 
 	// Extract values from CR
-	if err := values.Load(ic, nn, cr); err != nil {
+	if err := values.Load(ic, nn, cr, log); err != nil {
 		log.Error(err, ERROR_FAILED_TO_LOAD_VALUES)
 		return RequeueAfterError, err
 	}

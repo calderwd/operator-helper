@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	config "github.com/calderwd/operator-helper/internal/config"
+	log "github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -53,7 +54,7 @@ func TestLoad(t *testing.T) {
 	}
 
 	values := Values{}
-	values.Load(config, nn, &dummy)
+	values.Load(config, nn, &dummy, log.Logger{})
 
 	assert.Equal(t, values.GetString("title"), "Test")
 	assert.Equal(t, values.GetString("app.name"), "my-test")

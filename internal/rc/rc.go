@@ -71,7 +71,7 @@ func (c DClient) CreateResourceFromYaml(rs string) error {
 	_, err = res.Create(context.TODO(), &resource, v1.CreateOptions{})
 
 	if k8serrors.IsAlreadyExists(err) {
-		return nil
+		_, err = res.Update(context.TODO(), &resource, v1.UpdateOptions{})
 	}
 
 	return err
